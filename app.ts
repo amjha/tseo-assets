@@ -1,18 +1,20 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const express = require('express');
 const bodyParser = require('body-parser');
 const ldap = require('ldapjs');
 const jwt = require('jsonwebtoken');
-const checkAuth = require('./check-auth');
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const app = express();
+
 import { resolve } from "path";
 import { config } from "dotenv";
 config({ path: resolve(__dirname, "../.env") });
 
 import { connectionHandle } from './db';
+import { checkAuth } from './checkAuth';
 import {Photo} from './model';
-
 const distFolder = '../dist/';
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 

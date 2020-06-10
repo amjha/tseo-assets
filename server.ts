@@ -1,5 +1,4 @@
-const app = require('./paxserver/app');
-const debug = require('debug')('node-angular');
+const app = require('./app');
 const http = require('http');
 
 const normalizePort = val => {
@@ -35,7 +34,7 @@ const onError = error => {
 
 const onListening = () => {
   const bind = typeof port === 'string' ? 'pipe ' + port : 'port ' + port;
-  debug('Listening on ' + bind);
+  console.log('Listening on ' + bind);
 };
 
 const port = normalizePort(process.env.PORT || '3000');

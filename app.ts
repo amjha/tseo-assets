@@ -1,5 +1,3 @@
-import {Photo} from './model';
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const ldap = require('ldapjs');
@@ -7,15 +5,14 @@ const jwt = require('jsonwebtoken');
 const checkAuth = require('./check-auth');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const app = express();
-
-require('dotenv').config();
+import { resolve } from "path";
+import { config } from "dotenv";
+config({ path: resolve(__dirname, "../.env") });
 
 import { connectionHandle } from './db';
-const ont = require('./ont_data_category');
-const units = require('./units');
+import {Photo} from './model';
 
-
-const distFolder = './dist/parser-ui2/';
+const distFolder = '../dist/';
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -38,48 +35,30 @@ app.all('/', function(req, res) {
 });
 
 app.post('/api/login',  (req, res) => {
-
+    const ldapServer = process.env.LDAP;
     const username = req.body.data.username,
-        password = req.body.data.password;
+          password = req.body.data.password;
     let msgBody;
     const client = ldap.createClient({
-        url: 'ldap://10.42.52.20'
+        url: `ldap://${ldapServer}`
     });
-    console.log('connecting..');
-    client.bind(`NA\\${username}`, password, function(err) {
+    
+    client.bind(username, password, function(err) {
         if (err) {
             console.log(err.message);
             msgBody = {code: -1, status: err.message};
         } else {
-            console.log('User connected!!');
-            const token = jwt.sign({ userId: username}, 'cThIIoDvwdueQB468K5xDc5633seEFoqwxjF_xSJyQQ', {expiresIn: '1h'});
+            const token = jwt.sign({ userId: username}, process.env.JWT_SECRET, {expiresIn: '1h'});
             msgBody = {code: 0, status: 'connected', token};
         }
-        console.log(msgBody);
         client.unbind(function(error) {
             if (error) {
-                console.log(error.message);
-            } else {
-                console.log('client disconnected');
+                console.error(error.message);
             }
         });
         res.send(msgBody);
-
-
     });
-
 });
-
-app.get('/api/get_ont_category', (req, res) => {
-    console.log('sending...');
-    res.send(ont);
-});
-
-app.get('/api/get_units', (req, res) => {
-    console.log('sending units...');
-    res.send(units);
-});
-
 
 app.post('/api/posts', checkAuth, (req, res, next) => {
   const post = req.body;
@@ -89,12 +68,11 @@ app.post('/api/posts', checkAuth, (req, res, next) => {
   });
 });
 
-// app.get('/api/photo', checkAuth, async (req, res, next) => {
-//   const photoRepository = connectionHandle.getRepository(Photo);
-//   const savedPhotos = await photoRepository.find();
-//   console.log(savedPhotos);
-//   res.send(savedPhotos);
-// });
+app.get('/api/photo', checkAuth, async (req, res, next) => {
+  const ontologyRepository = await connectionHandle();
+  const ontData = await ontologyRepository.find();
+  res.send(ontData);
+});
 
 
 module.exports = app;
